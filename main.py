@@ -24,11 +24,7 @@ for i in xrange(len(moves)):
   move.sequence = ""
   move.set_leds(255, 255, 255)
   move.update_leds()
-  
-  move.max_ax, move.max_ay, move.max_az = 0, 0, 0
-  move.min_ax, move.min_ay, move.min_az = 0, 0, 0
-  move.max_gx, move.max_gy, move.max_gz = 0, 0, 0
-  move.min_gx, move.min_gy, move.min_gz = 0, 0, 0
+  move.actionTimer = 0
 
 action2colour = {
   "U": (255, 255, 0),
@@ -93,13 +89,14 @@ class ShieldSpell(Spell):
     
   def cast(self, caster):
     caster.shield = self.element
-    caster.shieldTimer = 3.0
+    caster.shieldTimer = 5.0
 
 spells = [
+  DirectDamageSpell("Mud Shot", "DUS", "earth", 2),
   DirectDamageSpell("Luke-Warm Blast", "RUR", "fire", 3),
-  ShieldSpell("Fire Shield", "DR", "fire"),
+  ShieldSpell("Fire Shield", "RD", "fire"),
   DirectDamageSpell("Light Drizzle", "LUL", "ice", 3),
-  ShieldSpell("Ice Wall", "DL", "ice"),
+  ShieldSpell("Ice Wall", "LD", "ice"),
 ]
 
 winner = None
@@ -110,64 +107,44 @@ while winner == None:
     move.poll()
     ax, ay, az = move.get_accelerometer_frame(psmove.Frame_SecondHalf)
     gx, gy, gz = move.get_gyroscope_frame(psmove.Frame_SecondHalf)
-    move.max_ax = max(move.max_ax, ax)
-    move.max_ay = max(move.max_ay, ay)
-    move.max_az = max(move.max_az, az)
-    move.min_ax = min(move.min_ax, ax)
-    move.min_ay = min(move.min_ay, ay)
-    move.min_az = min(move.min_az, az)
-    move.max_gx = max(move.max_gx, gx)
-    move.max_gy = max(move.max_gy, gy)
-    move.max_gz = max(move.max_gz, gz)
-    move.min_gx = min(move.min_gx, gx)
-    move.min_gy = min(move.min_gy, gy)
-    move.min_gz = min(move.min_gz, gz)
 
-    pressed, released = move.get_button_events()
-    if pressed & psmove.Btn_T:
-      move.max_ax, move.max_ay, move.max_az = 0, 0, 0
-      move.min_ax, move.min_ay, move.min_az = 0, 0, 0
-      move.max_gx, move.max_gy, move.max_gz = 0, 0, 0
-      move.min_gx, move.min_gy, move.min_gz = 0, 0, 0
-    elif released & psmove.Btn_T:
+    move.actionTimer -= 0.01
+    if move.actionTimer <= 0:
       action = ""
-      max_g = max(move.max_gx, move.max_gy, move.max_gz, -move.min_gx, -move.min_gy, -move.min_gz)
-      max_a = max(move.max_ax, move.max_ay, move.max_az, -move.min_ax, -move.min_ay, -move.min_az)
-      if move.max_gz > 10 and move.max_gz == max_g and move.max_az > 0.8:
+      max_g = max(0, abs(gx), abs(gy), abs(gz))
+      max_a = max(0, abs(ax), abs(ay), abs(az))
+      if az > 0.8 and ((gz > 10 and gz == max_g) or ax < -2):
         action = "L"
-      elif move.min_gz < -10 and move.min_gz == -max_g and move.max_az > 0.8:
+      elif az > 0.8 and ((gz < -10 and gz == -max_g) or ax > 2):
         action = "R"
-      elif move.max_gx > 10 and move.max_gx == max_g:
+      elif gx > 10 and gx == max_g:
         action = "U"
-      elif move.min_gx < -10 and move.min_gx == -max_g:
+      elif gx < -10 and gx == -max_g:
         action = "D"
-      elif move.max_ay > 1.5:
+      elif ay > 1.5:
         action = "S"
       if action != "":
+        move.actionTimer = .5
         move.sequence = (move.sequence + action)[-10:]
         for spell in spells:
           if move.sequence[-len(spell.sequence):] == spell.sequence:
             print(spell.name)
             p = subprocess.Popen("echo \""+spell.name+"\" | festival --tts", shell=True)
-            #os.system("echo \"" + spell.name + "\" | festival --tts")
             spell.cast(move.wizard)
-            move.wizard.castTimer = .2
             break
 
     colour = (255, 255, 255)
-    if move.wizard.castTimer > 0:
+    if move.actionTimer <= 0:
       colour = (255, 255, 255)
+      move.set_rumble(0)
     elif len(move.sequence) > 0:
       colour = action2colour[move.sequence[-1:]]
+      move.set_rumble(128)
     colour = [(c * move.wizard.health) / 20 for c in colour]
     move.set_leds(*colour)
 
     if move.wizard.damageTimer > 0:
       move.set_rumble(255)
-    elif move.wizard.shield == "none":
-      move.set_rumble(0)
-    else:
-      move.set_rumble(64)
     move.update_leds()
   
   for wizard in wizards:
