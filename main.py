@@ -15,6 +15,10 @@ moves = [psmove.PSMove(i) for i in xrange(min(2, psmove.count_connected()))]
 
 print("%(n)d PS Move controllers detected" % {"n": len(moves)})
 
+if len(moves) < 2:
+  print("Requires 2 PS Move controllers, exiting...")
+  exit()
+
 for i in xrange(len(moves)):
   move = moves[i]
   if move.pair():
