@@ -84,6 +84,8 @@ class DirectDamageSpell(Spell):
     self.damage = damage
     
   def cast(self, caster):
+    #if caster.opponent.shield == "reflect":
+    #  
     if caster.opponent.shield == self.element:
       caster.opponent.health -= int(float(self.damage)*max(1.0-caster.opponent.shieldEffacy, 0.0))
     else:
@@ -108,15 +110,15 @@ class ShieldSpell(Spell):
     caster.shieldTimer = self.duration
 
 spells = (
-  DirectDamageSpell("Finger of Mild Discomfort", "LRUDUDSSS", "earth", 19)
-  DirectDamageSpell("Fierce Candle", "RURURDS", "fire", 5)
-  DirectDamageSpell("Severe Damp", "LULULDS", "ice", 5)
-  Spell("Always Greener", "DDDDDD")
-  Spell("Elemental Sneeze", "SLRDU")
-  Spell("Kitchen Counter", "LRUDS")
-  DirectDamageSpell("Prismatic Spurt", "DURLS", "frostfire", 5)
-  ShieldSpell("Aluminium Foil", "DRLUD", "reflect", 3.0, 1.0)
-  Spell("Life Sucks", "DDDS")
+  DirectDamageSpell("Finger of Mild Discomfort", "LRUDUDSSS", "earth", 19),
+  DirectDamageSpell("Fierce Candle", "RURURDS", "fire", 5),
+  DirectDamageSpell("Severe Damp", "LULULDS", "ice", 5),
+  Spell("Always Greener", "DDDDDD"),
+  Spell("Elemental Sneeze", "SLRDU"),
+  Spell("Kitchen Counter", "LRUDS"),
+  DirectDamageSpell("Prismatic Spurt", "DURLS", "frostfire", 5),
+  ShieldSpell("Aluminium Foil", "DRLUD", "reflect", 3.0, 1.0),
+  Spell("Life Sucks", "DDDS"),
   DirectDamageSpell("Mud Shot", "DUS", "earth", 2),
   DirectDamageSpell("Luke-Warm Blast", "RUR", "fire", 3),
   DirectDamageSpell("Light Drizzle", "LUL", "ice", 3),
