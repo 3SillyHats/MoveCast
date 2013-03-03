@@ -42,6 +42,7 @@ shield2colour = {
   "none": (255, 255, 255),
   "fire": (255, 128, 128),
   "ice": (128, 128, 255),
+  "reflect": (128, 255, 128),
 }
 
 class Wizard:
@@ -49,6 +50,7 @@ class Wizard:
   move = None
   opponent = None
   shield = "none"
+  shieldEffacy = 0
   shieldTimer = 0
   castTimer = 0
   damageTimer = 0
@@ -59,10 +61,11 @@ class Wizard:
     move.wizard = self
   
   def damage(self, damage, element):
-    if self.shield == "reflect":
-      self.opponent.health -= damage
+    if self.shield == "reflect" and self.opponent.shield != "reflect":
+      self.opponent.damage(damage, element)
+      return
     if self.shield == element:
-      self.health -= int(float(damage)*max(1.0-shield.shieldEffacy, 0.0))
+      self.health -= int(float(damage)*max(1.0-self.shieldEffacy, 0.0))
     else:
       self.health -= damage
     self.damageTimer = .5
@@ -93,7 +96,7 @@ class DirectDamageSpell(Spell):
     self.damage = damage
     
   def cast(self, caster):
-    if type(self.element) == "tuple" and type(self.damage) == "tuple":
+    if type(self.element) == tuple and type(self.damage) == tuple:
       for a, e in zip(self.damage, self.element):
         caster.opponent.damage(a, e)
     else:
