@@ -80,11 +80,6 @@ class Wizard:
       self.health -= damage
     self.damageTimer = .5
 
-wizards = []
-wizards.append(Wizard(moves[0], None))
-wizards.append(Wizard(moves[1], wizards[0]))
-wizards[0].opponent = wizards[1]
-
 class Spell:
   name = None
   sequence = None
@@ -176,121 +171,139 @@ spells = (
   DirectDamageSpell("Fierce Candle", "RURURLS", "fire", 5),
   DirectDamageSpell("Severe Damp", "LULULRS", "ice", 5),
   LifeSwitchSpell("Always Greener", "DDDDDD"),
-  DamageOverTimeSpell("Elemental Sneeze", "SLRDU", 1, 2.0, 5),
-  CounterSpell("Kitchen Counter", "LRUDS"),
-  DirectDamageSpell("Prismatic Spurt", "DURLS", ("fire", "ice"), (3, 2)),
-  ShieldSpell("Aluminium Foil", "DRLUD", "reflect", 3.0, 1.0),
+  #DamageOverTimeSpell("Elemental Sneeze", "SRLUD", 1, 2.0, 5),
+  #DirectDamageSpell("Prismatic Spurt", "DURLS", ("fire", "ice"), (3, 2)),
+  ShieldSpell("Aluminium Foil", "DRLUD", "reflect", 6.0, 1.0),
   DrainSpell("Life Sucks", "DDDS", 2, "earth"),
-  DirectDamageSpell("Mud Shot", "DUS", "earth", 2),
+  CounterSpell("Kitchen Counter", "DUS"),
+  #DirectDamageSpell("Mud Shot", "DUS", "earth", 2),
   DirectDamageSpell("Luke-Warm Blast", "RUR", "fire", 3),
   DirectDamageSpell("Light Drizzle", "LUL", "ice", 3),
-  ShieldSpell("Hot Air", "RD", "fire", 6.0, 0.5),
-  ShieldSpell("Ice Sheet", "LD", "ice", 3.0, 1.0),
+  DirectDamageSpell("Jammy Dodger", "SU", "earth", 1),
+  ShieldSpell("Hot Air", "RD", "fire", 12.0, 0.5),
+  ShieldSpell("Ice Sheet", "LD", "ice", 6.0, 1.0),
 )
 
-winner = None
+while True:
+  winner = None
+  
+  wizards = []
+  wizards.append(Wizard(moves[0], None))
+  wizards.append(Wizard(moves[1], wizards[0]))
+  wizards[0].opponent = wizards[1]
 
-while winner == None:
   for i in xrange(len(moves)):
     move = moves[i]
+    move.sequence = ""
+    move.actionTimer = 0.5
     move.poll()
-    ax, ay, az = move.get_accelerometer_frame(psmove.Frame_SecondHalf)
-    gx, gy, gz = move.get_gyroscope_frame(psmove.Frame_SecondHalf)
 
-    move.actionTimer -= 0.01
-    if move.actionTimer <= 0:
-      action = ""
-      max_g = max(0, abs(gx), abs(gy), abs(gz))
-      max_a = max(0, abs(ax), abs(ay), abs(az))
-      if az > 0.8 and ((gz > 10 and gz == max_g) or ax < -2):
-        action = "L"
-      elif az > 0.8 and ((gz < -10 and gz == -max_g) or ax > 2):
-        action = "R"
-      elif gx > 10 and gx == max_g:
-        action = "U"
-      elif gx < -10 and gx == -max_g:
-        action = "D"
-      elif ay > 1.5:
-        action = "S"
-      if action != "":
-        move.actionTimer = .5
-        move.sequence = (move.sequence + action)[-10:]
-        for spell in spells:
-          if move.sequence[-len(spell.sequence):] == spell.sequence:
-            print(spell.name)
-            p = subprocess.Popen("echo \""+spell.name+"\" | festival --tts", shell=True)
-            spell.cast(move.wizard)
-            break
+  while winner == None:
+    for i in xrange(len(moves)):
+      move = moves[i]
+      move.poll()
+      ax, ay, az = move.get_accelerometer_frame(psmove.Frame_SecondHalf)
+      gx, gy, gz = move.get_gyroscope_frame(psmove.Frame_SecondHalf)
 
-    colour = (255, 255, 255)
-    if move.actionTimer <= 0:
-      colour = shield2colour[move.wizard.shield]
-    elif len(move.sequence) > 0:
-      colour = action2colour[move.sequence[-1:]]
-    colour = [(c * move.wizard.health) / 20 for c in colour]
-    move.set_leds(*colour)
+      move.actionTimer -= 0.01
+      if move.actionTimer <= 0:
+        action = ""
+        max_g = max(0, abs(gx), abs(gy), abs(gz))
+        max_a = max(0, abs(ax), abs(ay), abs(az))
+        if az > 0.8 and ((gz > 11 and gz == max_g) or ax < -2):
+          action = "L"
+        elif az > 0.8 and ((gz < -11 and gz == -max_g) or ax > 2):
+          action = "R"
+        elif gx > 10 and gx == max_g:
+          action = "U"
+        elif gx < -10 and gx == -max_g:
+          action = "D"
+        elif ay > 1.5:
+          action = "S"
+        if action != "":
+          move.actionTimer = .5
+          move.sequence = (move.sequence + action)[-10:]
+          for spell in spells:
+            if move.sequence[-len(spell.sequence):] == spell.sequence:
+              print(spell.name)
+              p = subprocess.Popen("echo \""+spell.name+"\" | festival --tts", shell=True)
+              spell.cast(move.wizard)
+              break
 
-    if move.wizard.damageTimer > 0:
-      move.set_rumble(255)
-    elif move.actionTimer > 0:
-      move.set_rumble(128)
-    else:
-      move.set_rumble(0)
-    move.update_leds()
-  
-  for wizard in wizards:
-    wizard.castTimer -= 0.01
-    wizard.shieldTimer -= 0.01
-    wizard.damageTimer -= 0.01
-    wizard.dotTimer -= 0.01
-    if wizard.dotTicks > 0 and wizard.dotTimer < 0:
-      wizard.damage(wizard.dotDamage, "fire")
-      wizard.damage(wizard.dotDamage, "ice")
-      wizard.dotTimer = wizard.dotPeriod
-      wizard.dotTicks -= 1
-    if wizard.shieldTimer < 0:
-      wizard.shield = "none"
-      wizard.shieldTimer = 0
-    if wizard.health <= 0:
-      winner = wizard.opponent
-  
-  time.sleep(.01)
-
-# Declare winner
-timer = 0
-h = 0
-while timer < 5.0:
-    for wizard in wizards:
-        if wizard != winner:
-            wizard.move.set_leds(0, 0, 0)
-            wizard.move.set_rumble(0)
+      colour = (255, 255, 255)
+      if move.wizard.damageTimer > 0 and int(10*move.wizard.damageTimer)%2 == 0:
+        colour = (0,0,0)
+      elif len(move.sequence) > 0:
+        if move.actionTimer <= 0:
+          colour = shield2colour[move.wizard.shield]
         else:
-            h = (h + 0.05) % 6
-            if h < 3.0:
-                wizard.move.set_rumble(128)
-            else:
-                wizard.move.set_rumble(0)
-            x = 1 - abs((h % 2) - 1)
-            if h < 1:
-                r, g, b = 1, x, 0
-            elif h < 2:
-                r, g, b = x, 1, 0
-            elif h < 3:
-                r, g, b = 0, 1, x
-            elif h < 4:
-                r, g, b = 0, x, 1
-            elif h < 5:
-                r, g, b = x, 0, 1
-            elif h < 6:
-                r, g, b = 1, 0, x
-            wizard.move.set_leds(int(r*255), int(g*255), int(b*255))
-        wizard.move.update_leds()
+          colour = action2colour[move.sequence[-1:]]
+      else:
+        colour = (255,128,0)
+      colour = [(c * move.wizard.health) / 20 for c in colour]
+      move.set_leds(*colour)
+
+      if move.wizard.damageTimer > 0:
+        move.set_rumble(255)
+      elif move.actionTimer > 0:
+        move.set_rumble(128)
+      else:
+        move.set_rumble(0)
+      move.update_leds()
+  
+    for wizard in wizards:
+      wizard.castTimer -= 0.01
+      wizard.shieldTimer -= 0.01
+      wizard.damageTimer -= 0.01
+      wizard.dotTimer -= 0.01
+      if wizard.dotTicks > 0 and wizard.dotTimer < 0:
+        wizard.damage(wizard.dotDamage, "fire")
+        wizard.damage(wizard.dotDamage, "ice")
+        wizard.dotTimer = wizard.dotPeriod
+        wizard.dotTicks -= 1
+      if wizard.shieldTimer < 0:
+        wizard.shield = "none"
+        wizard.shieldTimer = 0
+      if wizard.health <= 0:
+        winner = wizard.opponent
+  
+    time.sleep(.01)
+
+  # Declare winner
+  timer = 0
+  h = 0
+  while timer < 5.0:
+    for wizard in wizards:
+      if wizard != winner:
+        wizard.move.set_leds(0, 0, 0)
+        wizard.move.set_rumble(0)
+      else:
+        h = (h + 0.05) % 6
+        if h < 3.0:
+          wizard.move.set_rumble(128)
+        else:
+          wizard.move.set_rumble(0)
+        x = 1 - abs((h % 2) - 1)
+        if h < 1:
+          r, g, b = 1, x, 0
+        elif h < 2:
+          r, g, b = x, 1, 0
+        elif h < 3:
+          r, g, b = 0, 1, x
+        elif h < 4:
+          r, g, b = 0, x, 1
+        elif h < 5:
+          r, g, b = x, 0, 1
+        elif h < 6:
+          r, g, b = 1, 0, x
+        wizard.move.set_leds(int(r*255), int(g*255), int(b*255))
+      wizard.move.update_leds()
         
     timer = timer + .01
     time.sleep(.01)
   
-for move in moves:
-  move.set_leds(0, 0, 0)
-  move.set_rumble(0)
-  move.update_leds()
-time.sleep(0.1)
+  for move in moves:
+    move.set_leds(0, 0, 0)
+    move.set_rumble(0)
+    move.update_leds()
+  time.sleep(1)
