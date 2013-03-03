@@ -109,13 +109,20 @@ class ShieldSpell(Spell):
     caster.shieldEffacy = self.effacy
     caster.shieldTimer = self.duration
 
+class CounterSpell(Spell):
+  def __init__(self, name, sequence):
+    Spell.__init__(self, name, sequence)
+    
+  def cast(self, caster):
+    caster.opponent.move.sequence = ""
+
 spells = (
   DirectDamageSpell("Finger of Mild Discomfort", "LRUDUDSSS", "earth", 19),
   DirectDamageSpell("Fierce Candle", "RURURDS", "fire", 5),
   DirectDamageSpell("Severe Damp", "LULULDS", "ice", 5),
   Spell("Always Greener", "DDDDDD"),
   Spell("Elemental Sneeze", "SLRDU"),
-  Spell("Kitchen Counter", "LRUDS"),
+  CounterSpell("Kitchen Counter", "LRUDS"),
   DirectDamageSpell("Prismatic Spurt", "DURLS", "frostfire", 5),
   ShieldSpell("Aluminium Foil", "DRLUD", "reflect", 3.0, 1.0),
   Spell("Life Sucks", "DDDS"),
