@@ -135,8 +135,8 @@ class LifeSwitchSpell(Spell):
 
 spells = (
   DirectDamageSpell("Finger of Mild Discomfort", "LRUDUDSSS", "earth", 19),
-  DirectDamageSpell("Fierce Candle", "RURURDS", "fire", 5),
-  DirectDamageSpell("Severe Damp", "LULULDS", "ice", 5),
+  DirectDamageSpell("Fierce Candle", "RURURLS", "fire", 5),
+  DirectDamageSpell("Severe Damp", "LULULRS", "ice", 5),
   LifeSwitchSpell("Always Greener", "DDDDDD"),
   Spell("Elemental Sneeze", "SLRDU"),
   CounterSpell("Kitchen Counter", "LRUDS"),
