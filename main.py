@@ -57,6 +57,15 @@ class Wizard:
     self.move = move
     self.opponent = opponent
     move.wizard = self
+  
+  def damage(self, damage, element):
+    if self.shield == "reflect":
+      self.opponent.health -= damage
+    if self.shield == element:
+      self.health -= int(float(damage)*max(1.0-shield.shieldEffacy, 0.0))
+    else:
+      self.health -= damage
+    self.damageTimer = .5
 
 wizards = []
 wizards.append(Wizard(moves[0], None))
@@ -84,13 +93,11 @@ class DirectDamageSpell(Spell):
     self.damage = damage
     
   def cast(self, caster):
-    #if caster.opponent.shield == "reflect":
-    #  
-    if caster.opponent.shield == self.element:
-      caster.opponent.health -= int(float(self.damage)*max(1.0-caster.opponent.shieldEffacy, 0.0))
+    if type(self.element) == "tuple" and type(self.damage) == "tuple":
+      for a, e in zip(self.damage, self.element):
+        caster.opponent.damage(a, e)
     else:
-      caster.opponent.health -= self.damage
-    caster.opponent.damageTimer = .5
+      caster.opponent.damage(self.damage, self.element)
     print(caster.opponent.health)
 
 class ShieldSpell(Spell):
@@ -130,7 +137,7 @@ spells = (
   LifeSwitchSpell("Always Greener", "DDDDDD"),
   Spell("Elemental Sneeze", "SLRDU"),
   CounterSpell("Kitchen Counter", "LRUDS"),
-  DirectDamageSpell("Prismatic Spurt", "DURLS", "frostfire", 5),
+  DirectDamageSpell("Prismatic Spurt", "DURLS", ("fire", "ice"), (3, 2)),
   ShieldSpell("Aluminium Foil", "DRLUD", "reflect", 3.0, 1.0),
   Spell("Life Sucks", "DDDS"),
   DirectDamageSpell("Mud Shot", "DUS", "earth", 2),
