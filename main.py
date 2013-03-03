@@ -54,12 +54,22 @@ class Wizard:
   shieldTimer = 0
   castTimer = 0
   damageTimer = 0
+  dotDamage = 0
+  dotPeriod = 0
+  dotTicks = 0
+  dotTimer = 0
   
   def __init__(self, move, opponent):
     self.move = move
     self.opponent = opponent
     move.wizard = self
   
+  def applyDoT(self, damage, period, ticks):
+    self.dotDamage = damage
+    self.dotPeriod = period
+    self.dotTicks = ticks
+    self.dotTimer = period
+    
   def damage(self, damage, element):
     if self.shield == "reflect" and self.opponent.shield != "reflect":
       self.opponent.damage(damage, element)
@@ -103,6 +113,34 @@ class DirectDamageSpell(Spell):
       caster.opponent.damage(self.damage, self.element)
     print(caster.opponent.health)
 
+class DamageOverTimeSpell(Spell):
+  damage = 0
+  period = 0
+  ticks = 0
+
+  def __init__(self, name, sequence, damage, period, ticks):
+    Spell.__init__(self, name, sequence)
+    self.damage = damage
+    self.period = period
+    self.ticks = ticks
+    
+  def cast(self, caster):
+    caster.applyDoT(self.damage, self.period, self.ticks)
+    caster.opponent.applyDoT(self.damage, self.period, self.ticks)
+
+class DrainSpell(Spell):
+  damage = 0
+  element = None
+  
+  def __init__(self, name, sequence, damage, element):
+    Spell.__init__(self, name, sequence)
+    self.damage = damage
+    self.element = element
+    
+  def cast(self, caster):
+    caster.opponent.damage(self.damage, self.element)
+    caster.health = min(20, caster.health + self.damage)
+
 class ShieldSpell(Spell):
   element = None
   duration = 0.0
@@ -138,11 +176,11 @@ spells = (
   DirectDamageSpell("Fierce Candle", "RURURLS", "fire", 5),
   DirectDamageSpell("Severe Damp", "LULULRS", "ice", 5),
   LifeSwitchSpell("Always Greener", "DDDDDD"),
-  Spell("Elemental Sneeze", "SLRDU"),
+  DamageOverTimeSpell("Elemental Sneeze", "SLRDU", 1, 2.0, 5),
   CounterSpell("Kitchen Counter", "LRUDS"),
   DirectDamageSpell("Prismatic Spurt", "DURLS", ("fire", "ice"), (3, 2)),
   ShieldSpell("Aluminium Foil", "DRLUD", "reflect", 3.0, 1.0),
-  Spell("Life Sucks", "DDDS"),
+  DrainSpell("Life Sucks", "DDDS", 2, "earth"),
   DirectDamageSpell("Mud Shot", "DUS", "earth", 2),
   DirectDamageSpell("Luke-Warm Blast", "RUR", "fire", 3),
   DirectDamageSpell("Light Drizzle", "LUL", "ice", 3),
@@ -204,6 +242,12 @@ while winner == None:
     wizard.castTimer -= 0.01
     wizard.shieldTimer -= 0.01
     wizard.damageTimer -= 0.01
+    wizard.dotTimer -= 0.01
+    if wizard.dotTicks > 0 and wizard.dotTimer < 0:
+      wizard.damage(wizard.dotDamage, "fire")
+      wizard.damage(wizard.dotDamage, "ice")
+      wizard.dotTimer = wizard.dotPeriod
+      wizard.dotTicks -= 1
     if wizard.shieldTimer < 0:
       wizard.shield = "none"
       wizard.shieldTimer = 0
