@@ -38,6 +38,12 @@ action2colour = {
   "S": (255, 0, 255),
 }
 
+shield2colour = {
+  "none": (255, 255, 255),
+  "fire": (255, 128, 128),
+  "ice": (128, 128, 255),
+}
+
 class Wizard:
   health = 20
   move = None
@@ -79,29 +85,35 @@ class DirectDamageSpell(Spell):
     
   def cast(self, caster):
     if caster.opponent.shield == self.element:
-      caster.opponent.health -= self.damage/2
+      caster.opponent.health -= int(float(self.damage)*max(1.0-caster.opponent.shieldEffacy, 0.0))
     else:
       caster.opponent.health -= self.damage
     caster.opponent.damageTimer = .5
+    print(caster.opponent.health)
 
 class ShieldSpell(Spell):
   element = None
+  duration = 0.0
+  effacy = 1.0
   
-  def __init__(self, name, sequence, element):
+  def __init__(self, name, sequence, element, duration, effacy):
     Spell.__init__(self, name, sequence)
     self.element = element
+    self.duration = duration
+    self.effacy = effacy
     
   def cast(self, caster):
     caster.shield = self.element
-    caster.shieldTimer = 5.0
+    caster.shieldEffacy = self.effacy
+    caster.shieldTimer = self.duration
 
-spells = [
+spells = (
   DirectDamageSpell("Mud Shot", "DUS", "earth", 2),
   DirectDamageSpell("Luke-Warm Blast", "RUR", "fire", 3),
-  ShieldSpell("Fire Shield", "RD", "fire"),
+  ShieldSpell("Hot Air", "RD", "fire", 6.0, 0.5),
   DirectDamageSpell("Light Drizzle", "LUL", "ice", 3),
-  ShieldSpell("Ice Wall", "LD", "ice"),
-]
+  ShieldSpell("Ice Sheet", "LD", "ice", 3.0, 1.0),
+)
 
 winner = None
 
@@ -139,16 +151,18 @@ while winner == None:
 
     colour = (255, 255, 255)
     if move.actionTimer <= 0:
-      colour = (255, 255, 255)
-      move.set_rumble(0)
+      colour = shield2colour[move.wizard.shield]
     elif len(move.sequence) > 0:
       colour = action2colour[move.sequence[-1:]]
-      move.set_rumble(128)
     colour = [(c * move.wizard.health) / 20 for c in colour]
     move.set_leds(*colour)
 
     if move.wizard.damageTimer > 0:
       move.set_rumble(255)
+    elif move.actionTimer > 0:
+      move.set_rumble(128)
+    else:
+      move.set_rumble(0)
     move.update_leds()
   
   for wizard in wizards:
