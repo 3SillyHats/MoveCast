@@ -108,10 +108,19 @@ class ShieldSpell(Spell):
     caster.shieldTimer = self.duration
 
 spells = (
+  DirectDamageSpell("Finger of Mild Discomfort", "LRUDUDSSS", "earth", 19)
+  DirectDamageSpell("Fierce Candle", "RURURDS", "fire", 5)
+  DirectDamageSpell("Severe Damp", "LULULDS", "ice", 5)
+  Spell("Always Greener", "DDDDDD")
+  Spell("Elemental Sneeze", "SLRDU")
+  Spell("Kitchen Counter", "LRUDS")
+  DirectDamageSpell("Prismatic Spurt", "DURLS", "frostfire", 5)
+  ShieldSpell("Aluminium Foil", "DRLUD", "reflect", 3.0, 1.0)
+  Spell("Life Sucks", "DDDS")
   DirectDamageSpell("Mud Shot", "DUS", "earth", 2),
   DirectDamageSpell("Luke-Warm Blast", "RUR", "fire", 3),
-  ShieldSpell("Hot Air", "RD", "fire", 6.0, 0.5),
   DirectDamageSpell("Light Drizzle", "LUL", "ice", 3),
+  ShieldSpell("Hot Air", "RD", "fire", 6.0, 0.5),
   ShieldSpell("Ice Sheet", "LD", "ice", 3.0, 1.0),
 )
 
