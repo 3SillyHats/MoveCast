@@ -2,6 +2,8 @@ import os
 import subprocess
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
+if sys.version_info < (3,):
+	range = xrange
 
 import random
 import math
@@ -11,15 +13,30 @@ import psmove
 
 print("Run with sudo to pair controllers connected with USB")
 
-moves = [psmove.PSMove(i) for i in xrange(min(2, psmove.count_connected()))]
+# Pair move controllers connected by usb
+usbMoves = [move for move in [psmove.PSMove(i) for i in range(min(2, psmove.count_connected()))] if move.connection_type == psmove.Conn_USB]
+for i in range(len(usbMoves)):
+  move = usbMoves[i]
+  if move.pair():
+    print("Controller %(i)d paired" % {"i": i})
+  else:
+    print("Controller %(i)d not paired" % {"i": i})
+
+#Play with move controllers connected by bluetooth
+moves = [move for move in [psmove.PSMove(i) for i in range(min(2, psmove.count_connected()))] if move.connection_type != psmove.Conn_USB]
 
 print("%(n)d PS Move controllers detected" % {"n": len(moves)})
 
 if len(moves) < 2:
-  print("Requires 2 PS Move controllers, exiting...")
-  exit()
+  if len(moves) + len(usbMoves) >= 2:
+    print("Requires 2 PS Move controllers, connect more controllers by pressing ps button")
+    while len(moves) < 2:
+      moves = [move for move in [psmove.PSMove(i) for i in range(min(2, psmove.count_connected()))] if move.connection_type != psmove.Conn_USB]
+  else:
+    print("Requires 2 PS Move controllers, exiting...")
+    exit()
 
-for i in xrange(len(moves)):
+for i in range(len(moves)):
   move = moves[i]
   if move.pair():
     print("Controller %(i)d paired" % {"i": i})
@@ -29,6 +46,8 @@ for i in xrange(len(moves)):
   move.set_leds(255, 255, 255)
   move.update_leds()
   move.actionTimer = 0
+
+
 
 action2colour = {
   "U": (255, 255, 0),
@@ -192,14 +211,14 @@ while True:
   wizards.append(Wizard(moves[1], wizards[0]))
   wizards[0].opponent = wizards[1]
 
-  for i in xrange(len(moves)):
+  for i in range(len(moves)):
     move = moves[i]
     move.sequence = ""
     move.actionTimer = 0.5
     move.poll()
 
   while winner == None:
-    for i in xrange(len(moves)):
+    for i in range(len(moves)):
       move = moves[i]
       move.poll()
       ax, ay, az = move.get_accelerometer_frame(psmove.Frame_SecondHalf)
@@ -240,7 +259,7 @@ while True:
           colour = action2colour[move.sequence[-1:]]
       else:
         colour = (255,128,0)
-      colour = [(c * move.wizard.health) / 20 for c in colour]
+      colour = [int((c * move.wizard.health) / 20) for c in colour]
       move.set_leds(*colour)
 
       if move.wizard.damageTimer > 0:
